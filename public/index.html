@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codehub Execution Engine - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-blue: #0f3460;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-orange: #f39c12;
+            --border-color: #0c182c;
+            --card-bg: #0d192a;
+            --input-bg: #0c182c;
+            --button-hover-bg: #1c4587;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--bg-secondary);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            box-shadow: 2px 0 10px var(--shadow-color);
+        }
+
+        .sidebar h2 {
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 1rem;
+        }
+
+        .sidebar nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar nav ul li a:hover,
+        .sidebar nav ul li a.active {
+            background-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .sidebar nav ul li a svg {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        .btn-green {
+            background-color: var(--accent-green);
+        }
+
+        .btn-green:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-red {
+            background-color: var(--accent-red);
+        }
+
+        .btn-red:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-orange {
+            background-color: var(--accent-orange);
+        }
+
+        .btn-orange:hover {
+            background-color: #e67e22;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .status-running {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-stopped {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--accent-red);
+        }
+
+        .status-unknown {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 30px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .close-button {
+            color: var(--text-secondary);
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover {
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(15, 52, 96, 0.5);
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 0.5rem;
+            transform: scale(1.2);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+
+        .modal-actions .btn {
+            min-width: 100px;
+        }
+
+        .modal-actions .btn-cancel {
+            background-color: transparent;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .modal-actions .btn-cancel:hover {
+            background-color: rgba(var(--text-secondary), 0.1);
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1001;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .toast.success {
+            border: 1px solid var(--accent-green);
+        }
+
+        .toast.error {
+            border: 1px solid var(--accent-red);
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <h2>Codehub Engine</h2>
+        <nav>
+            <ul>
+                <li>
+                    <a href="index.html" class="active">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="logs.html">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 13h-4v4h-2v-4h-4v-2h4V7h2v4h4v2zm-12-6H4V5h8v2zm0 4H4v-2h8v2zm0 4H4v-2h8v2zm0 4H4v-2h8v2z"/>
+                        </svg>
+                        Logs
+                    </a>
+                </li>
+                <li>
+                    <a href="upload.html">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zm-1-7l-1.41-1.41L13 10.17V4h-2v6.17L8.41 6.59 7 8l5 5 5-5z"/>
+                        </svg>
+                        Upload Image
+                    </a>
+                </li>
+                <li>
+                    <a href="schedule.html">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
+                        </svg>
+                        Scheduled Tasks
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <h1>Dashboard - Project Overview</h1>
+        <div class="dashboard-grid" id="containers-grid">
+            <!-- Container cards will be loaded here by JavaScript -->
+            <div class="card placeholder-card">
+                <h3>Loading Containers...</h3>
+                <p>Please wait while we fetch the latest container information.</p>
+                <div class="card-actions">
+                    <button class="btn" disabled>Loading...</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="executeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Execute Codebase</h2>
+                <span class="close-button" onclick="closeModal('executeModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="executeDirName">Directory Name:</label>
+                <input type="text" id="executeDirName" placeholder="e.g., my_project_dir">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('executeModal')">Cancel</button>
+                <button class="btn btn-green" onclick="executeCodebase()">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="startCodeServerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Start Code Server</h2>
+                <span class="close-button" onclick="closeModal('startCodeServerModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="startServerDirName">Directory Name:</label>
+                <input type="text" id="startServerDirName" placeholder="e.g., my_project_dir">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('startCodeServerModal')">Cancel</button>
+                <button class="btn btn-green" onclick="startCodeServer()">Start Server</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rollbackModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Rollback Server</h2>
+                <span class="close-button" onclick="closeModal('rollbackModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="rollbackDirName">Directory Name:</label>
+                <input type="text" id="rollbackDirName" placeholder="e.g., my_project_dir">
+            </div>
+            <div class="form-group">
+                <label for="rollbackCommitId">Commit ID:</label>
+                <input type="text" id="rollbackCommitId" placeholder="e.g., a1b2c3d4e5f6">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('rollbackModal')">Cancel</button>
+                <button class="btn btn-orange" onclick="rollbackServer()">Rollback</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stopProcessModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Stop Process</h2>
+                <span class="close-button" onclick="closeModal('stopProcessModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="stopProcessDirName">Directory Name:</label>
+                <input type="text" id="stopProcessDirName" placeholder="e.g., my_project_dir">
+            </div>
+            <div class="form-group">
+                <input type="checkbox" id="stopProcessIdes">
+                <label for="stopProcessIdes" style="display: inline;">Stop associated IDEs as well?</label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('stopProcessModal')">Cancel</button>
+                <button class="btn btn-red" onclick="stopProcess()">Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API_BASE_URL = 'http://34.28.45.117:8000';
+        const containersGrid = document.getElementById('containers-grid');
+        const toastElement = document.getElementById('toast');
+
+        // Helper for API calls
+        async function fetchApi(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                    throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
+                }
+
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    return await response.json();
+                }
+                return await response.text(); // For endpoints that might return plain text
+            } catch (error) {
+                console.error('API call failed:', error);
+                showToast(`Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        function showToast(message, type = 'success', duration = 3000) {
+            toastElement.textContent = message;
+            toastElement.className = `toast show ${type}`;
+            setTimeout(() => {
+                toastElement.className = 'toast';
+            }, duration);
+        }
+
+        function openModal(modalId, dirName = '') {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                // Pre-fill dir_name if available
+                if (dirName) {
+                    const dirInput = modal.querySelector('input[id$="DirName"]');
+                    if (dirInput) {
+                        dirInput.value = dirName;
+                    }
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                // Clear inputs on close
+                modal.querySelectorAll('input[type="text"], input[type="checkbox"]').forEach(input => {
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                    // Clear inputs on close
+                    modal.querySelectorAll('input[type="text"], input[type="checkbox"]').forEach(input => {
+                        if (input.type === 'checkbox') {
+                            input.checked = false;
+                        } else {
+                            input.value = '';
+                        }
+                    });
+                }
+            });
+        }
+
+        async function fetchContainers() {
+            containersGrid.innerHTML = `\n                <div class="card placeholder-card">\n                    <h3>Loading Containers...</h3>\n                    <p>Fetching data from the Codehub Execution Engine.</p>\n                    <div class="card-actions">\n                        <button class="btn" disabled>Loading...</button>\n                    </div>\n                </div>\n            `;
+            try {
+                const data = await fetchApi('/containers');
+                renderContainers(data);
+                showToast('Containers loaded successfully!', 'success');
+            } catch (error) {
+                containersGrid.innerHTML = `\n                    <div class="card placeholder-card" style="border-color: var(--accent-red);">\n                        <h3>Error Loading Containers</h3>\n                        <p>Could not fetch containers. Please check the API server and try again.</p>\n                        <div class="card-actions">\n                            <button class="btn btn-red" onclick="fetchContainers()">Retry</button>\n                        </div>\n                    </div>\n                `;
+                console.error('Failed to fetch containers:', error);
+            }
+        }
+
+        function renderContainers(containers) {
+            containersGrid.innerHTML = ''; // Clear existing content
+            if (containers.length === 0) {
+                containersGrid.innerHTML = `\n                    <div class="card placeholder-card">\n                        <h3>No Containers Found</h3>\n                        <p>It seems there are no active or inactive containers. Time to start something new!</p>\n                        <div class="card-actions">\n                            <button class="btn" onclick="openModal('executeModal')">Execute New Project</button>\n                        </div>\n                    </div>\n                `;
+                return;
+            }
+
+            containers.forEach(container => {
+                const dirName = container.dir_name || 'N/A';
+                const status = container.status || 'unknown';
+                const statusClass = status === 'running' ? 'status-running' : (status === 'exited' ? 'status-stopped' : 'status-unknown');
+                const statusText = status === 'exited' ? 'Stopped' : (status.charAt(0).toUpperCase() + status.slice(1));
+
+                const cardHtml = `\n                    <div class="card">\n                        <div class="card-header">\n                            <h3>${dirName}</h3>\n                            <span class="status-badge ${statusClass}">${statusText}</span>\n                        </div>\n                        <p>Container ID: ${container.id ? container.id.substring(0, 12) : 'N/A'}</p>\n                        <p>Image: ${container.image || 'N/A'}</p>\n                        <div class="card-actions">\n                            <button class="btn btn-green" onclick="openModal('executeModal', '${dirName}')">Execute</button>\n                            <button class="btn" onclick="openModal('startCodeServerModal', '${dirName}')">Start Server</button>\n                            <button class="btn btn-orange" onclick="openModal('rollbackModal', '${dirName}')">Rollback</button>\n                            <button class="btn btn-red" onclick="openModal('stopProcessModal', '${dirName}')">Stop</button>\n                            <button class="btn" onclick="window.location.href='logs.html?dir_name=${dirName}'">View Logs</button>\n                        </div>\n                    </div>\n                `;
+                containersGrid.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        async function executeCodebase() {
+            const dirName = document.getElementById('executeDirName').value;
+            if (!dirName) {
+                showToast('Please enter a directory name.', 'error');
+                return;
+            }
+            try {
+                closeModal('executeModal');
+                showToast(`Executing startup.sh for ${dirName}...`, 'success');
+                await fetchApi('/execute_codebase', {
+                    method: 'POST',
+                    body: JSON.stringify({ dir_name: dirName })
+                });
+                showToast(`Successfully initiated execution for ${dirName}.`, 'success');
+                fetchContainers(); // Refresh dashboard
+            } catch (error) {
+                showToast(`Failed to execute codebase for ${dirName}.`, 'error');
+            }
+        }
+
+        async function startCodeServer() {
+            const dirName = document.getElementById('startServerDirName').value;
+            if (!dirName) {
+                showToast('Please enter a directory name.', 'error');
+                return;
+            }
+            try {
+                closeModal('startCodeServerModal');
+                showToast(`Starting code server for ${dirName}...`, 'success');
+                await fetchApi('/code_server', {
+                    method: 'POST',
+                    body: JSON.stringify({ dir_name: dirName })
+                });
+                showToast(`Code server started for ${dirName}.`, 'success');
+                fetchContainers(); // Refresh dashboard
+            } catch (error) {
+                showToast(`Failed to start code server for ${dirName}.`, 'error');
+            }
+        }
+
+        async function rollbackServer() {
+            const dirName = document.getElementById('rollbackDirName').value;
+            const commitId = document.getElementById('rollbackCommitId').value;
+            if (!dirName || !commitId) {
+                showToast('Please enter both directory name and commit ID.', 'error');
+                return;
+            }
+            try {
+                closeModal('rollbackModal');
+                showToast(`Rolling back ${dirName} to commit ${commitId}...`, 'orange');
+                await fetchApi('/rollback_server', {
+                    method: 'POST',
+                    body: JSON.stringify({ dir_name: dirName, commit_id: commitId })
+                });
+                showToast(`${dirName} rolled back to ${commitId} and restarted.`, 'success');
+                fetchContainers(); // Refresh dashboard
+            } catch (error) {
+                showToast(`Failed to rollback ${dirName}.`, 'error');
+            }
+        }
+
+        async function stopProcess() {
+            const dirName = document.getElementById('stopProcessDirName').value;
+            const ides = document.getElementById('stopProcessIdes').checked;
+            if (!dirName) {
+                showToast('Please enter a directory name.', 'error');
+                return;
+            }
+            try {
+                closeModal('stopProcessModal');
+                showToast(`Stopping process for ${dirName}...`, 'red');
+                await fetchApi('/stop_process', {
+                    method: 'POST',
+                    body: JSON.stringify({ dir_name: dirName, ides: ides })
+                });
+                showToast(`Process for ${dirName} stopped successfully.`, 'success');
+                fetchContainers(); // Refresh dashboard
+            } catch (error) {
+                showToast(`Failed to stop process for ${dirName}.`, 'error');
+            }
+        }
+
+        // Initial fetch on page load
+        document.addEventListener('DOMContentLoaded', fetchContainers);
+    </script>
+</body>
+</html>
