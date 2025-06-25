@@ -490,7 +490,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const API_BASE_URL = 'http://34.28.45.117:8000';
+        const API_BASE_URL = 'http://localhost:9000';
         const containersGrid = document.getElementById('containers-grid');
         const toastElement = document.getElementById('toast');
 
@@ -580,7 +580,7 @@
             containersGrid.innerHTML = `\n                <div class="card placeholder-card">\n                    <h3>Loading Containers...</h3>\n                    <p>Fetching data from the Codehub Execution Engine.</p>\n                    <div class="card-actions">\n                        <button class="btn" disabled>Loading...</button>\n                    </div>\n                </div>\n            `;
             try {
                 const data = await fetchApi('/containers');
-                renderContainers(data);
+                renderContainers(data); // Pass the entire data object
                 showToast('Containers loaded successfully!', 'success');
             } catch (error) {
                 containersGrid.innerHTML = `\n                    <div class="card placeholder-card" style="border-color: var(--accent-red);">\n                        <h3>Error Loading Containers</h3>\n                        <p>Could not fetch containers. Please check the API server and try again.</p>\n                        <div class="card-actions">\n                            <button class="btn btn-red" onclick="fetchContainers()">Retry</button>\n                        </div>\n                    </div>\n                `;
@@ -588,20 +588,31 @@
             }
         }
 
-        function renderContainers(containers) {
+        function renderContainers(apiResponse) {
+            const containers = apiResponse.containers; // Access the 'containers' array from the API response
             containersGrid.innerHTML = ''; // Clear existing content
-            if (containers.length === 0) {
+            if (!containers || containers.length === 0) {
                 containersGrid.innerHTML = `\n                    <div class="card placeholder-card">\n                        <h3>No Containers Found</h3>\n                        <p>It seems there are no active or inactive containers. Time to start something new!</p>\n                        <div class="card-actions">\n                            <button class="btn" onclick="openModal('executeModal')">Execute New Project</button>\n                        </div>\n                    </div>\n                `;
                 return;
             }
 
             containers.forEach(container => {
-                const dirName = container.dir_name || 'N/A';
-                const status = container.status || 'unknown';
-                const statusClass = status === 'running' ? 'status-running' : (status === 'exited' ? 'status-stopped' : 'status-unknown');
-                const statusText = status === 'exited' ? 'Stopped' : (status.charAt(0).toUpperCase() + status.slice(1));
+                const dirName = container.name || 'N/A'; // Use container.name
+                const rawStatus = container.status || 'unknown'; // Get the raw status string
+                let statusClass = 'status-unknown';
+                let statusText = 'Unknown';
 
-                const cardHtml = `\n                    <div class="card">\n                        <div class="card-header">\n                            <h3>${dirName}</h3>\n                            <span class="status-badge ${statusClass}">${statusText}</span>\n                        </div>\n                        <p>Container ID: ${container.id ? container.id.substring(0, 12) : 'N/A'}</p>\n                        <p>Image: ${container.image || 'N/A'}</p>\n                        <div class="card-actions">\n                            <button class="btn btn-green" onclick="openModal('executeModal', '${dirName}')">Execute</button>\n                            <button class="btn" onclick="openModal('startCodeServerModal', '${dirName}')">Start Server</button>\n                            <button class="btn btn-orange" onclick="openModal('rollbackModal', '${dirName}')">Rollback</button>\n                            <button class="btn btn-red" onclick="openModal('stopProcessModal', '${dirName}')">Stop</button>\n                            <button class="btn" onclick="window.location.href='logs.html?dir_name=${dirName}'">View Logs</button>\n                        </div>\n                    </div>\n                `;
+                if (rawStatus.toLowerCase().includes('running')) {
+                    statusClass = 'status-running';
+                    statusText = 'Running';
+                } else if (rawStatus.toLowerCase().includes('exited')) {
+                    statusClass = 'status-stopped';
+                    statusText = 'Stopped';
+                } else {
+                    statusText = rawStatus; // Display raw status if not running or exited
+                }
+
+                const cardHtml = `\n                    <div class="card">\n                        <div class="card-header">\n                            <h3>${dirName}</h3>\n                            <span class="status-badge ${statusClass}">${statusText}</span>\n                        </div>\n                        <p>Container ID: ${container.id ? container.id.substring(0, 12) : 'N/A'}</p>\n                        <!-- Removed Image field as it's not in the new API response -->\n                        <div class="card-actions">\n                            <button class="btn btn-green" onclick="openModal('executeModal', '${dirName}')">Execute</button>\n                            <button class="btn" onclick="openModal('startCodeServerModal', '${dirName}')">Start Server</button>\n                            <button class="btn btn-orange" onclick="openModal('rollbackModal', '${dirName}')">Rollback</button>\n                            <button class="btn btn-red" onclick="openModal('stopProcessModal', '${dirName}')">Stop</button>\n                            <button class="btn" onclick="window.location.href='logs.html?dir_name=${dirName}'">View Logs</button>\n                        </div>\n                    </div>\n                `;
                 containersGrid.insertAdjacentHTML('beforeend', cardHtml);
             });
         }
